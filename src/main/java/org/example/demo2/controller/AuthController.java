@@ -1,13 +1,21 @@
 package org.example.demo2.controller;
 
 
+import com.mysql.cj.x.protobuf.MysqlxDatatypes;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.example.demo2.model.User;
 import org.example.demo2.repository.UserRepository;
 import org.example.demo2.security.JwtTokenProvider;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -47,6 +55,31 @@ public class AuthController {
         userRepository.save(user);
         return "User registered successfully";
     }
+}
+
+@PostMapping("/logout")
+public ResponseEntity<MysqlxDatatypes.Scalar.String> logoutUser(HttpServletRequest request, HttpServletResponse response) {
+    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+    if (auth != null) {
+        new SecurityContextLogoutHandler().logout(request, response, auth);
+    }
+    return ResponseEntity.ok("Logout successful");
+}
+
+@PostMapping("/admin/logout")
+public ResponseEntity<String> logoutUserAsAdmin(HttpServletRequest request, HttpServletResponse response) {
+    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+    if (auth != null) {
+        UserDetails userDetails = (UserDetails) auth.getPrincipal();
+
+        if (userDetails.getAuthorities().stream().anyMatch(role -> role.getAuthority().equals("ROLE_ADMIN"))) {
+            new SecurityContextLogoutHandler().logout(request, response, auth);
+            return ResponseEntity.ok("Admin logout successful");
+        } else {
+            return ResponseEntity.badRequest().body("Only admins can perform this action");
+        }
+    }
+    return ResponseEntity.ok("Logout successful");
 }
 
 class LoginRequest {
