@@ -1,7 +1,5 @@
 package org.example.demo2.controller;
 
-
-import com.mysql.cj.x.protobuf.MysqlxDatatypes;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.example.demo2.model.User;
@@ -21,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
+
     @Autowired
     private AuthenticationManager authenticationManager;
 
@@ -55,31 +54,31 @@ public class AuthController {
         userRepository.save(user);
         return "User registered successfully";
     }
-}
 
-@PostMapping("/logout")
-public ResponseEntity<MysqlxDatatypes.Scalar.String> logoutUser(HttpServletRequest request, HttpServletResponse response) {
-    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-    if (auth != null) {
-        new SecurityContextLogoutHandler().logout(request, response, auth);
-    }
-    return ResponseEntity.ok("Logout successful");
-}
-
-@PostMapping("/admin/logout")
-public ResponseEntity<String> logoutUserAsAdmin(HttpServletRequest request, HttpServletResponse response) {
-    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-    if (auth != null) {
-        UserDetails userDetails = (UserDetails) auth.getPrincipal();
-
-        if (userDetails.getAuthorities().stream().anyMatch(role -> role.getAuthority().equals("ROLE_ADMIN"))) {
+    @PostMapping("/logout")
+    public ResponseEntity<String> logoutUser(HttpServletRequest request, HttpServletResponse response) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null) {
             new SecurityContextLogoutHandler().logout(request, response, auth);
-            return ResponseEntity.ok("Admin logout successful");
-        } else {
-            return ResponseEntity.badRequest().body("Only admins can perform this action");
         }
+        return ResponseEntity.ok("Logout successful");
     }
-    return ResponseEntity.ok("Logout successful");
+
+    @PostMapping("/admin/logout")
+    public ResponseEntity<String> logoutUserAsAdmin(HttpServletRequest request, HttpServletResponse response) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null) {
+            UserDetails userDetails = (UserDetails) auth.getPrincipal();
+
+            if (userDetails.getAuthorities().stream().anyMatch(role -> role.getAuthority().equals("ROLE_ADMIN"))) {
+                new SecurityContextLogoutHandler().logout(request, response, auth);
+                return ResponseEntity.ok("Admin logout successful");
+            } else {
+                return ResponseEntity.badRequest().body("Only admins can perform this action");
+            }
+        }
+        return ResponseEntity.ok("Logout successful");
+    }
 }
 
 class LoginRequest {
@@ -123,4 +122,3 @@ class RegisterRequest {
         this.password = password;
     }
 }
-
